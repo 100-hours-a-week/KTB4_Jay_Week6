@@ -1,0 +1,74 @@
+package kr.adapterz.springboot.user;
+
+import kr.adapterz.springboot.global.ApiResponse;
+import kr.adapterz.springboot.user.dto.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/users")
+public class UserController {
+
+    private final UserService userService;
+
+    @GetMapping
+    public List<User> getUsers() {
+        return userService.getUsers();
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<RegisterResponse>> register(
+            @RequestBody RegisterRequest request
+    ){
+        RegisterResponse response = userService.register(request);
+        //  new RegisterResponse(savedUser.getId());
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>("register_success", response));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponse>> login(
+            @RequestBody LoginRequest request
+    ){
+        LoginResponse response = userService.login(request);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>("login_success", response)
+        );
+    }
+
+    @PatchMapping("/me")
+    public ResponseEntity<ApiResponse<UserUpdateResponse>> updateUser(
+            @RequestBody UserUpdateRequest request
+    ){
+        UserUpdateResponse response = userService.update(request);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>("user_information_update_success", response)
+        );
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(
+            @RequestBody UserDeleteRequest request
+    ){
+        userService.deleteUser(request);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<ApiResponse<Void>> updateUserPass(
+            @RequestBody UserUpdatePassRequest request
+    ){
+        userService.updatePass(request);
+
+        return ResponseEntity.ok(new ApiResponse<>("change_password_success", null));
+    }
+}
