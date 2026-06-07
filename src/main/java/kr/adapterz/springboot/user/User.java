@@ -37,4 +37,8 @@ public class User {
     public void delete(){
         this.deleted = true;
     }
+
+    public boolean isDeleted(){
+        return this.deleted;
+    }
 }
