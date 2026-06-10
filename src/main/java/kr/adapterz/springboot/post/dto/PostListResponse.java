@@ -1,11 +1,13 @@
 package kr.adapterz.springboot.post.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 
 @AllArgsConstructor
+@Builder
 @Getter
 public class PostListResponse {
     private Long postId;

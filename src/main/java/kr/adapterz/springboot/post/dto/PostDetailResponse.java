@@ -2,12 +2,14 @@ package kr.adapterz.springboot.post.dto;
 
 import kr.adapterz.springboot.comment.dto.CommentDetailResponse;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @AllArgsConstructor
+@Builder
 @Getter
 public class PostDetailResponse {
     private Long postId;

@@ -1,6 +1,9 @@
 package kr.adapterz.springboot.comment;
 
 import kr.adapterz.springboot.comment.dto.*;
+import kr.adapterz.springboot.global.exception.BadRequestException;
+import kr.adapterz.springboot.global.exception.ForbiddenException;
+import kr.adapterz.springboot.global.exception.NotFoundException;
 import kr.adapterz.springboot.post.Post;
 import kr.adapterz.springboot.post.PostRepository;
 import kr.adapterz.springboot.user.User;
@@ -18,15 +21,15 @@ public class CommentService {
     // 댓글 작성
     public CommentCreateResponse createComment(Long postId, CommentCreateRequest request) {
         if (request.getComment() == null || request.getComment().isBlank()) {
-            throw new IllegalArgumentException("no_content");
+            throw new BadRequestException("no_content");
         }
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("post_not_found"));
+                .orElseThrow(() -> new NotFoundException("post_not_found"));
         if (post.isDeleted()) {
-            throw new IllegalArgumentException("post_not_found");
+            throw new NotFoundException("post_not_found");
         }
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("No_User"));
+                .orElseThrow(() -> new NotFoundException("user_not_found"));
 
         Comment comment = new Comment(postId, user.getId(), null, request.getComment());
         Comment savedComment = commentRepository.save(comment);
@@ -43,18 +46,18 @@ public class CommentService {
     // 댓글 수정
     public CommentUpdateResponse updateComment(Long commentId, CommentUpdateRequest request) {
         if (request.getComment() == null || request.getComment().isBlank()) {
-            throw new IllegalArgumentException("no_content");
+            throw new BadRequestException("no_content");
         }
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("comment_not_found"));
+                .orElseThrow(() -> new NotFoundException("comment_not_found"));
         if (comment.isDeleted() || comment.isReply()) {
-            throw new IllegalArgumentException("comment_not_found");
+            throw new NotFoundException("comment_not_found");
         }
         validateAuthor(comment, request.getUserId());
 
         comment.update(request.getComment());
         User user = userRepository.findById(comment.getAuthorId())
-                .orElseThrow(() -> new IllegalArgumentException("No_User"));
+                .orElseThrow(() -> new NotFoundException("user_not_found"));
 
         return new CommentUpdateResponse(
                 comment.getId(),
@@ -68,9 +71,9 @@ public class CommentService {
     // 댓글 삭제
     public CommentDeleteResponse deleteComment(Long commentId, CommentDeleteRequest request) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("comment_not_found"));
+                .orElseThrow(() -> new NotFoundException("comment_not_found"));
         if (comment.isDeleted()) {
-            throw new IllegalArgumentException("comment_not_found");
+            throw new NotFoundException("comment_not_found");
         }
         validateAuthor(comment, request.getUserId());
 
@@ -87,15 +90,15 @@ public class CommentService {
     // 대댓글 작성
     public ReplyCreateResponse createReply(Long commentId, ReplyCreateRequest request) {
         if (request.getReplyComment() == null || request.getReplyComment().isBlank()) {
-            throw new IllegalArgumentException("no_reply_content");
+            throw new BadRequestException("no_reply_content");
         }
         Comment parentComment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("comment_not_found"));
+                .orElseThrow(() -> new NotFoundException("comment_not_found"));
         if (parentComment.isDeleted() || parentComment.isReply()) {
-            throw new IllegalArgumentException("comment_not_found");
+            throw new NotFoundException("comment_not_found");
         }
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("No_User"));
+                .orElseThrow(() -> new NotFoundException("user_not_found"));
 
         Comment reply = new Comment(parentComment.getPostId(), user.getId(), parentComment.getId(), request.getReplyComment());
         Comment savedReply = commentRepository.save(reply);
@@ -113,18 +116,18 @@ public class CommentService {
     // 대댓글 수정
     public ReplyCreateResponse updateReply(Long commentId, Long replyId, ReplyUpdateRequest request) {
         if (request.getReplyEditComment() == null || request.getReplyEditComment().isBlank()) {
-            throw new IllegalArgumentException("no_reply_edit_content");
+            throw new BadRequestException("no_reply_edit_content");
         }
         Comment reply = commentRepository.findById(replyId)
-                .orElseThrow(() -> new IllegalArgumentException("reply_not_found"));
+                .orElseThrow(() -> new NotFoundException("reply_not_found"));
         if (reply.isDeleted() || !commentId.equals(reply.getParentCommentId())) {
-            throw new IllegalArgumentException("reply_not_found");
+            throw new NotFoundException("reply_not_found");
         }
         validateAuthor(reply, request.getUserId());
 
         reply.update(request.getReplyEditComment());
         User user = userRepository.findById(reply.getAuthorId())
-                .orElseThrow(() -> new IllegalArgumentException("No_User"));
+                .orElseThrow(() -> new NotFoundException("user_not_found"));
 
         return new ReplyCreateResponse(
                 reply.getId(),
@@ -139,7 +142,7 @@ public class CommentService {
     // 작성자 본인인지 확인
     private void validateAuthor(Comment comment, Long userId) {
         if (userId == null || !comment.getAuthorId().equals(userId)) {
-            throw new IllegalArgumentException("not_author");
+            throw new ForbiddenException();
         }
     }
 }

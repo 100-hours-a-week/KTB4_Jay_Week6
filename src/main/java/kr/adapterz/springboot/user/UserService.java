@@ -1,6 +1,9 @@
 package kr.adapterz.springboot.user;
 
 import kr.adapterz.springboot.global.exception.UserNotFoundException;
+import kr.adapterz.springboot.global.exception.BadRequestException;
+import kr.adapterz.springboot.global.exception.ConflictException;
+import kr.adapterz.springboot.global.exception.UnauthorizedException;
 import kr.adapterz.springboot.user.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,25 +15,33 @@ import java.util.List;
 public class UserService {
     private final UserRepository userRepository;
 
-    public List<User> getUsers() {
-        return userRepository.findAll();
+    public List<GetUserResponse> getUsers() {
+        return userRepository.findAll().stream()
+                .map(user -> new GetUserResponse(
+                        user.getId(),
+                        user.getEmail(),
+                        user.getNickname(),
+                        user.getProfileImage(),
+                        user.getDeleted()
+                ))
+                .toList();
     }
 
     public RegisterResponse register(RegisterRequest request) {
         if (request.getEmail() == null || request.getEmail().isBlank()){
-            throw new IllegalArgumentException("empty_email");
+            throw new BadRequestException("empty_email");
         }
         if (request.getNickname() == null || request.getNickname().isBlank()){
-            throw new IllegalArgumentException("empty_nickname");
+            throw new BadRequestException("empty_nickname");
         }
         if (request.getPassword() == null || request.getPassword().isBlank()){
-            throw new IllegalArgumentException("empty_password");
+            throw new BadRequestException("empty_password");
         }
         if (userRepository.existsByEmail(request.getEmail())){
-            throw new IllegalArgumentException("already_exist_email");
+            throw new ConflictException("already_exist_email");
         }
         if (userRepository.existsByNickname(request.getNickname())){
-            throw new IllegalArgumentException("already_exist_nickname");
+            throw new ConflictException("already_exist_nickname");
         }
         User user = new User(
                 request.getEmail(),
@@ -46,17 +57,17 @@ public class UserService {
 
     public LoginResponse login(LoginRequest request){
         if (request.getEmail() == null || request.getEmail().isBlank()){
-            throw new IllegalArgumentException("empty_email");
+            throw new BadRequestException("empty_email");
         }
         if (request.getPassword() == null || request.getPassword().isBlank()){
-            throw new IllegalArgumentException("empty_password");
+            throw new BadRequestException("empty_password");
         }
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("login_failed"));
+                .orElseThrow(() -> new UnauthorizedException("login_failed"));
 
         if(!user.getPassword().equals(request.getPassword())){
-            throw new IllegalArgumentException("login_failed");
+            throw new UnauthorizedException("login_failed");
         }
 
         return new LoginResponse(
@@ -67,17 +78,17 @@ public class UserService {
 
     public UserUpdateResponse update(UserUpdateRequest request){
         if (request.getNickname() == null || request.getNickname().isBlank()){
-            throw new IllegalArgumentException("empty_nickname");
+            throw new BadRequestException("empty_nickname");
         }
         if (request.getProfileImage() == null || request.getProfileImage().isBlank()){
-            throw new IllegalArgumentException("empty_profileImage");
+            throw new BadRequestException("empty_profileImage");
         }
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("update_failed"));
+                .orElseThrow(() -> new UserNotFoundException());
 
         if (!user.getNickname().equals(request.getNickname())
                 && userRepository.existsByNickname(request.getNickname())) {
-            throw new IllegalArgumentException("already_exist_nickname");
+            throw new ConflictException("already_exist_nickname");
         }
 
         user.updateProfile(request.getNickname(), request.getProfileImage());
@@ -101,7 +112,13 @@ public class UserService {
                 .orElseThrow(()-> new UserNotFoundException());
 
         if (user.getDeleted()){
-            throw new IllegalArgumentException("탈퇴한 사용자입니다.");
+            throw new BadRequestException("deleted_user");
+        }
+        if (request.getNewpassword() == null || request.getNewpassword().isBlank()) {
+            throw new BadRequestException("empty_password");
+        }
+        if (!request.getNewpassword().equals(request.getNewpasswordCheck())) {
+            throw new BadRequestException("password_check_not_match");
         }
         user.changePassword(request.getNewpassword());
     }

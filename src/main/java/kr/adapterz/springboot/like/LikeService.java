@@ -1,5 +1,7 @@
 package kr.adapterz.springboot.like;
 
+import kr.adapterz.springboot.global.exception.ConflictException;
+import kr.adapterz.springboot.global.exception.NotFoundException;
 import kr.adapterz.springboot.like.dto.LikeRequest;
 import kr.adapterz.springboot.like.dto.LikeResponse;
 import kr.adapterz.springboot.post.Post;
@@ -18,14 +20,14 @@ public class LikeService {
     // 좋아요 누르기
     public LikeResponse like(Long postId, LikeRequest request) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("post_not_found"));
+                .orElseThrow(() -> new NotFoundException("post_not_found"));
         if (post.isDeleted()) {
-            throw new IllegalArgumentException("post_not_found");
+            throw new NotFoundException("post_not_found");
         }
         userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("No_User"));
+                .orElseThrow(() -> new NotFoundException("user_not_found"));
         if (likeRepository.existsByPostIdAndUserId(postId, request.getUserId())) {
-            throw new IllegalArgumentException("already_liked");
+            throw new ConflictException("already_liked");
         }
 
         likeRepository.save(new Like(postId, request.getUserId()));
@@ -36,12 +38,12 @@ public class LikeService {
     // 좋아요 취소
     public LikeResponse unlike(Long postId, LikeRequest request) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("post_not_found"));
+                .orElseThrow(() -> new NotFoundException("post_not_found"));
         if (post.isDeleted()) {
-            throw new IllegalArgumentException("post_not_found");
+            throw new NotFoundException("post_not_found");
         }
         Like like = likeRepository.findByPostIdAndUserId(postId, request.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("like_not_found"));
+                .orElseThrow(() -> new NotFoundException("like_not_found"));
 
         likeRepository.delete(like);
 

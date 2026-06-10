@@ -36,9 +36,10 @@ public class PostController {
 
     @GetMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostDetailResponse>> postDetail(
-            @PathVariable Long postId
+            @PathVariable Long postId,
+            @RequestParam Long userId
     ){
-        PostDetailResponse response = postService.getPostDetail(postId);
+        PostDetailResponse response = postService.getPostDetail(postId, userId);
 
         return ResponseEntity.ok()
                 .body(new ApiResponse<>("post_detail_success", response));
@@ -46,9 +47,10 @@ public class PostController {
 
     @DeleteMapping("/{postId}")
     public ResponseEntity<Void> deletePost(
-            @PathVariable Long postId
+            @PathVariable Long postId,
+            @RequestBody DeletePostRequest request
     ) {
-        postService.deletePost(postId);
+        postService.deletePost(postId, request);
 
         return ResponseEntity.noContent().build();
     }

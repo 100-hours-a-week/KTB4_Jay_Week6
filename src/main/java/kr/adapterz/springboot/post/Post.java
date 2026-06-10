@@ -2,7 +2,6 @@ package kr.adapterz.springboot.post;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.cglib.core.Local;
 
 import java.time.LocalDateTime;
 
@@ -28,7 +27,7 @@ public class Post {
         this.viewCount = 0;
         this.blinded = false;
         this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = null;
         this.deleted = false;
         this.edited = false;
     }

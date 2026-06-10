@@ -5,8 +5,6 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 @Getter
-public class UpdatePostRequest {
+public class DeletePostRequest {
     private Long userId;
-    private String title;
-    private String content;
 }

@@ -17,8 +17,12 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public List<User> getUsers() {
-        return userService.getUsers();
+    public ResponseEntity<ApiResponse<List<GetUserResponse>>> getUsers() {
+        List<GetUserResponse> response = userService.getUsers();
+
+        return ResponseEntity.ok(
+                new ApiResponse<>("user_list_success", response)
+        );
     }
 
     @PostMapping("/register")
