@@ -35,7 +35,11 @@ public class ReportService {
         }
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new NotFoundException("user_not_found"));
-        if (reportRepository.existsByPostIdAndUserId(postId, request.getUserId())) {
+
+        if (user.isDeleted()) {
+            throw new BadRequestException("deleted_user");
+        }
+        if (reportRepository.existsByPost_IdAndUser_Id(postId, request.getUserId())) {
             throw new ConflictException("already_reported");
         }
 

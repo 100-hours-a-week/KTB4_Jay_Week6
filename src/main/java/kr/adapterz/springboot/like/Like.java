@@ -1,13 +1,11 @@
 package kr.adapterz.springboot.like;
 
 import jakarta.persistence.*;
-import jakarta.persistence.criteria.Fetch;
 import kr.adapterz.springboot.post.Post;
 import kr.adapterz.springboot.user.User;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(

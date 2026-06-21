@@ -1,5 +1,6 @@
 package kr.adapterz.springboot.like;
 
+import kr.adapterz.springboot.global.exception.BadRequestException;
 import org.springframework.transaction.annotation.Transactional;
 import kr.adapterz.springboot.global.exception.ConflictException;
 import kr.adapterz.springboot.global.exception.NotFoundException;
@@ -32,13 +33,17 @@ public class LikeService {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new NotFoundException(("User_not_found")));
 
-        if (likeRepository.existsByPostIdAndUserId(postId, request.getUserId())) {
+        if (user.isDeleted()) {
+            throw new BadRequestException("deleted_user");
+        }
+
+        if (likeRepository.existsByPost_IdAndUser_Id(postId, request.getUserId())) {
             throw new ConflictException("already_liked");
         }
 
         likeRepository.save(new Like(post, user));
 
-        return new LikeResponse(likeRepository.countByPostId(postId));
+        return new LikeResponse(likeRepository.countByPost_Id(postId));
     }
 
     // 좋아요 취소
@@ -49,11 +54,11 @@ public class LikeService {
         if (post.isDeleted()) {
             throw new NotFoundException("post_already_deleted");
         }
-        Like like = likeRepository.findByPostIdAndUserId(postId, request.getUserId())
+        Like like = likeRepository.findByPost_IdAndUser_Id(postId, request.getUserId())
                 .orElseThrow(() -> new NotFoundException("like_not_found"));
 
         likeRepository.delete(like);
 
-        return new LikeResponse(likeRepository.countByPostId(postId));
+        return new LikeResponse(likeRepository.countByPost_Id(postId));
     }
 }

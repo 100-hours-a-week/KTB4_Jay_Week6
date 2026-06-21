@@ -1,16 +1,17 @@
-package kr.adapterz.springboot.post.dto;
+package kr.adapterz.springboot.postDraft.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-@AllArgsConstructor
 @Getter
-public class PostResponse {
-    private Long postId;
+@AllArgsConstructor
+public class DraftResponse {
+
+    private Long draftId;
     private String title;
     private String content;
-    private String author;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

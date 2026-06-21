@@ -14,5 +14,4 @@ public class UpdatePostResponse {
     private String author;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private boolean edited;
 }

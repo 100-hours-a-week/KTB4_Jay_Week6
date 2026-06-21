@@ -15,7 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -36,6 +37,10 @@ public class PostService {
         }
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new NotFoundException("user_not_found"));
+
+        if (user.isDeleted()) {
+            throw new BadRequestException("deleted_user");
+        }
         Post post = new Post(
                 user,
                 request.getTitle(),
@@ -52,7 +57,7 @@ public class PostService {
         );
     }
     public List<PostListResponse> getPost() {
-        List<Post> posts = postRepository.findAll();
+        List<Post> posts = postRepository.findAllWithAuthorFetchJoin();
 
         return posts.stream()
                 .filter(post -> !post.isDeleted())
@@ -79,7 +84,7 @@ public class PostService {
                             .postId(post.getId())
                             .title(post.getTitle())
                             .authorNickname(authorNickname)
-                            .commentCount(commentRepository.countByPostId(post.getId()))
+                            .commentCount((long)post.getCommentCount())
                             .viewCount((long) post.getViewCount())
                             .createdAt(post.getCreatedAt())
                             .updatedAt(post.getUpdatedAt())
@@ -91,7 +96,7 @@ public class PostService {
     }
     // 게시글 상세 조회
     public PostDetailResponse getPostDetail(Long postId, Long userId){
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.findByIdWithAuthor(postId)
                 .orElseThrow(() -> new NotFoundException("post_not_found"));
         if (post.isDeleted()){
             throw new NotFoundException("post_not_found");
@@ -114,7 +119,6 @@ public class PostService {
                     .blinded(true)
                     .createdAt(post.getCreatedAt())
                     .updatedAt(null)
-                    .edited(false)
                     .likeCount(null)
                     .viewCount(null)
                     .commentCount(null)
@@ -136,8 +140,7 @@ public class PostService {
                 .blinded(false)
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
-                .edited(post.isEdited())
-                .likeCount(likeRepository.countByPostId(postId))
+                .likeCount(likeRepository.countByPost_Id(postId))
                 .viewCount((long) post.getViewCount())
                 .commentCount(commentRepository.countByPostId(postId))
                 .comments(getComments(postId))
@@ -146,6 +149,9 @@ public class PostService {
     public void deletePost(Long postId, DeletePostRequest request){
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException("post_not_found"));
+        if (post.isDeleted()){
+            throw new NotFoundException("post_not_found");
+        }
         validateAuthor(post, request.getUserId());
 
         post.delete();
@@ -159,6 +165,9 @@ public class PostService {
         }
         Post post = postRepository.findById(postId)
                 .orElseThrow(()->new NotFoundException("post_not_found"));
+        if (post.isDeleted()){
+            throw new NotFoundException("post_not_found");
+        }
         User user = userRepository.findById(post.getAuthor().getId())
                 .orElseThrow(()->new NotFoundException("user_not_found"));
         validateAuthor(post, request.getUserId());
@@ -170,14 +179,13 @@ public class PostService {
                 request.getContent(),
                 user.getNickname(),
                 post.getCreatedAt(),
-                post.getUpdatedAt(),
-                post.isEdited()
+                post.getUpdatedAt()
         );
     }
 
     // 상세 조회에 들어갈 댓글 목록 조회
     private List<CommentDetailResponse> getComments(Long postId) {
-        return commentRepository.findParentCommentsByPostId(postId).stream()
+        return commentRepository.findParentCommentsByPost_Id(postId).stream()
                 .map(comment -> {
                     User author = userRepository.findById(comment.getAuthor().getId())
                             .orElseThrow(() -> new NotFoundException("user_not_found"));
@@ -197,7 +205,7 @@ public class PostService {
 
     // 댓글에 달린 대댓글 목록 조회
     private List<ReplyCreateResponse> getReplies(Comment parentComment) {
-        return commentRepository.findRepliesByParentCommentId(parentComment.getId()).stream()
+        return commentRepository.findRepliesByParentComment_Id(parentComment.getId()).stream()
                 .filter(reply -> !reply.isDeleted())
                 .map(reply -> {
                     User author = userRepository.findById(reply.getAuthor().getId())
@@ -223,17 +231,39 @@ public class PostService {
         if (userId == null) {
             throw new BadRequestException("empty_user_id");
         }
-        userRepository.findById(userId)
+        // 유저 찾기
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("user_not_found"));
 
+        //현재 시간 now에 저장
         LocalDateTime now = LocalDateTime.now();
-        boolean alreadyViewed = postViewRepository.findViewedAt(post.getId(), userId)
-                .map(viewedAt -> viewedAt.plusHours(24).isAfter(now))
-                .orElse(false);
 
-        if (!alreadyViewed) {
+        //optional 상자에 postView 담기 있을 수도 있고 없을 수도 있고...
+        Optional<PostView> optionalPostView
+                = postViewRepository.findByPost_IdAndUser_Id(post.getId(),userId);
+
+        // 만약 상자 안에 진짜 postView 객체가 있으면?
+        // 조회한지 24시간 지났는지 먼저 boolean 타입으로 체크
+        if (optionalPostView.isPresent()){
+            // 상자에서 진짜 postView 먼저 꺼내기
+            PostView postView = optionalPostView.get();
+
+            //24시간 지났으면 false 아니면 true
+            boolean alreadyViewed = postView.getViewedAt().plusHours(24).isAfter(now);
+            // 24시간 안 지났으면 return
+            if (alreadyViewed){
+                return;
+            }
+            //24시간 지났으면 조회수 올리고 viewedAt 업데이트하고 끝
+            // 어차피 업데이트만 해도 더티체킹으로 Update 가능
             post.increaseViewCount();
-            postViewRepository.save(post.getId(), userId, now);
+            postView.updatedViewedAt(now);
+            return;
         }
+
+        // 상자에 진짜 postView가 없다면 viewcount를 1 증가시키고 저장
+
+        post.increaseViewCount();
+        postViewRepository.save(new PostView(post, user, now));
     }
 }

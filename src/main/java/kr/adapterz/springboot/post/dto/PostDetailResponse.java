@@ -21,7 +21,6 @@ public class PostDetailResponse {
     private Boolean blinded;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private Boolean edited;
     private Long likeCount;
     private Long viewCount;
     private Long commentCount;

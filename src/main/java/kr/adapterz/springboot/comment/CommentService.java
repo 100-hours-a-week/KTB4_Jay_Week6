@@ -31,8 +31,12 @@ public class CommentService {
         if (post.isDeleted()) {
             throw new NotFoundException("post_not_found");
         }
+        post.commentIncrease();
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new NotFoundException("user_not_found"));
+        if (user.isDeleted()) {
+            throw new BadRequestException("deleted_user");
+        }
 
         Comment comment = new Comment(post, user, null, request.getComment());
         Comment savedComment = commentRepository.save(comment);
@@ -42,7 +46,7 @@ public class CommentService {
                 savedComment.getContent(),
                 user.getNickname(),
                 savedComment.getCreatedAt(),
-                commentRepository.countByPostId(postId)
+                post.getCommentCount()
         );
     }
 
@@ -68,7 +72,7 @@ public class CommentService {
                 comment.getContent(),
                 user.getNickname(),
                 comment.getCreatedAt(),
-                commentRepository.countByPostId(comment.getPost().getId())
+                comment.getPost().getCommentCount()
         );
     }
 
@@ -81,14 +85,18 @@ public class CommentService {
             throw new NotFoundException("comment_not_found");
         }
         validateAuthor(comment, request.getUserId());
-
+        Post post = comment.getPost();
         comment.delete();
+        if (!comment.isReply()){
+            post.commentDecrease();
+        }
+
 
         return new CommentDeleteResponse(
                 comment.getId(),
                 true,
                 "삭제된 댓글입니다.",
-                commentRepository.countByPostId(comment.getPost().getId())
+                comment.getPost().getCommentCount()
         );
     }
 
@@ -105,10 +113,12 @@ public class CommentService {
         }
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new NotFoundException("user_not_found"));
+        if (user.isDeleted()) {
+            throw new BadRequestException("deleted_user");
+        }
 
         // 생성자에 넣기 위한 post 생성
-        Post post = postRepository.findById(request.getPostId())
-                .orElseThrow(() -> new NotFoundException("post_not_found"));
+        Post post = parentComment.getPost();
 
         Comment reply = new Comment(post, user, parentComment, request.getReplyComment());
         Comment savedReply = commentRepository.save(reply);

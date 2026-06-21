@@ -36,6 +36,9 @@ public class Post {
     @Column(name = "view_count", nullable = false)
     private Long viewCount;
 
+    @Column(name = "comment_count", nullable = false)
+    private Long commentCount;
+
     @Column(nullable = false)
     private boolean blinded;
 
@@ -48,19 +51,16 @@ public class Post {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    @Column(nullable = false)
-    private boolean edited;
-
     public Post(User author, String title, String content){
         this.author = author;
         this.title = title;
         this.content = content;
         this.viewCount = 0L;
+        this.commentCount = 0L;
         this.blinded = false;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = null;
         this.deletedAt = null;
-        this.edited = false;
     }
 
     public void increaseViewCount(){
@@ -77,7 +77,6 @@ public class Post {
         this.title = title;
         this.content = content;
         this.updatedAt = LocalDateTime.now();
-        this.edited = true;
     }
 
     public void delete(){
@@ -86,6 +85,14 @@ public class Post {
 
     public boolean isDeleted(){
         return this.deletedAt != null;
+    }
+
+    public void commentIncrease(){
+        this.commentCount ++;
+    }
+
+    public void commentDecrease(){
+        this.commentCount --;
     }
 
 }
