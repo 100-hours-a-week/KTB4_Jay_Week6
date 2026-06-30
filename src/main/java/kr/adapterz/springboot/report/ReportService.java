@@ -1,15 +1,14 @@
 package kr.adapterz.springboot.report;
 
+import kr.adapterz.springboot.post.PostReader;
+import kr.adapterz.springboot.user.UserReader;
 import org.springframework.transaction.annotation.Transactional;
 import kr.adapterz.springboot.global.exception.BadRequestException;
 import kr.adapterz.springboot.global.exception.ConflictException;
-import kr.adapterz.springboot.global.exception.NotFoundException;
 import kr.adapterz.springboot.post.Post;
-import kr.adapterz.springboot.post.PostRepository;
 import kr.adapterz.springboot.report.dto.ReportRequest;
 import kr.adapterz.springboot.report.dto.ReportResponse;
 import kr.adapterz.springboot.user.User;
-import kr.adapterz.springboot.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,25 +19,17 @@ public class ReportService {
     private static final long BLIND_REPORT_COUNT = 5L;
 
     private final ReportRepository reportRepository;
-    private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final PostReader postReader;
+    private final UserReader userReader;
 
     @Transactional
     public ReportResponse reportPost(Long postId, ReportRequest request) {
         if (request.getUserId() == null) {
             throw new BadRequestException("empty_user_id");
         }
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new NotFoundException("post_not_found"));
-        if (post.isDeleted()) {
-            throw new NotFoundException("post_not_found");
-        }
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new NotFoundException("user_not_found"));
+        Post post = postReader.getActivePost(postId);
+        User user = userReader.getActiveUser(request.getUserId());
 
-        if (user.isDeleted()) {
-            throw new BadRequestException("deleted_user");
-        }
         if (reportRepository.existsByPost_IdAndUser_Id(postId, request.getUserId())) {
             throw new ConflictException("already_reported");
         }

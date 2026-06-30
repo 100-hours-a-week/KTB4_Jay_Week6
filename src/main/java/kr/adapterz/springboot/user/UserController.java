@@ -1,5 +1,6 @@
 package kr.adapterz.springboot.user;
 
+import jakarta.validation.Valid;
 import kr.adapterz.springboot.global.ApiResponse;
 import kr.adapterz.springboot.user.dto.*;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<RegisterResponse>> register(
-            @RequestBody RegisterRequest request
+            @Valid @RequestBody RegisterRequest request
     ){
         RegisterResponse response = userService.register(request);
         //  new RegisterResponse(savedUser.getId());
@@ -38,7 +39,7 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(
-            @RequestBody LoginRequest request
+            @Valid @RequestBody LoginRequest request
     ){
         LoginResponse response = userService.login(request);
 

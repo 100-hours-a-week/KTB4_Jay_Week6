@@ -1,14 +1,14 @@
 package kr.adapterz.springboot.comment;
 
+import kr.adapterz.springboot.post.PostReader;
+import kr.adapterz.springboot.user.UserReader;
 import org.springframework.transaction.annotation.Transactional;
 import kr.adapterz.springboot.comment.dto.*;
 import kr.adapterz.springboot.global.exception.BadRequestException;
 import kr.adapterz.springboot.global.exception.ForbiddenException;
 import kr.adapterz.springboot.global.exception.NotFoundException;
 import kr.adapterz.springboot.post.Post;
-import kr.adapterz.springboot.post.PostRepository;
 import kr.adapterz.springboot.user.User;
-import kr.adapterz.springboot.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,8 +17,8 @@ import org.springframework.stereotype.Service;
 @Transactional(readOnly = true)
 public class CommentService {
     private final CommentRepository commentRepository;
-    private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final PostReader postReader;
+    private final UserReader userReader;
 
     // 댓글 작성
     @Transactional
@@ -26,23 +26,16 @@ public class CommentService {
         if (request.getComment() == null || request.getComment().isBlank()) {
             throw new BadRequestException("no_content");
         }
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new NotFoundException("post_not_found"));
-        if (post.isDeleted()) {
-            throw new NotFoundException("post_not_found");
-        }
+        Post post = postReader.getActivePost(postId);
         post.commentIncrease();
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new NotFoundException("user_not_found"));
-        if (user.isDeleted()) {
-            throw new BadRequestException("deleted_user");
-        }
+        User user = userReader.getActiveUser(request.getUserId());
 
         Comment comment = new Comment(post, user, null, request.getComment());
         Comment savedComment = commentRepository.save(comment);
 
         return new CommentCreateResponse(
                 savedComment.getId(),
+                savedComment.getAuthor().getId(),
                 savedComment.getContent(),
                 user.getNickname(),
                 savedComment.getCreatedAt(),
@@ -64,11 +57,10 @@ public class CommentService {
         validateAuthor(comment, request.getUserId());
 
         comment.update(request.getComment());
-        User user = userRepository.findById(comment.getAuthor().getId())
-                .orElseThrow(() -> new NotFoundException("user_not_found"));
-
+        User user = userReader.getActiveUser(request.getUserId());
         return new CommentUpdateResponse(
                 comment.getId(),
+                user.getId(),
                 comment.getContent(),
                 user.getNickname(),
                 comment.getCreatedAt(),
@@ -111,11 +103,7 @@ public class CommentService {
         if (parentComment.isDeleted() || parentComment.isReply()) {
             throw new NotFoundException("comment_not_found");
         }
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new NotFoundException("user_not_found"));
-        if (user.isDeleted()) {
-            throw new BadRequestException("deleted_user");
-        }
+        User user = userReader.getActiveUser(request.getUserId());
 
         // 생성자에 넣기 위한 post 생성
         Post post = parentComment.getPost();
@@ -147,8 +135,7 @@ public class CommentService {
         validateAuthor(reply, request.getUserId());
 
         reply.update(request.getReplyEditComment());
-        User user = userRepository.findById(reply.getAuthor().getId())
-                .orElseThrow(() -> new NotFoundException("user_not_found"));
+        User user = userReader.getActiveUser(request.getUserId());
 
         return new ReplyCreateResponse(
                 reply.getId(),

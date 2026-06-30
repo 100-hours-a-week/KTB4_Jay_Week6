@@ -48,13 +48,7 @@ public class LikeJpaRepositoryTest {
                 savedUser
         );
 
-        Like like1 = new Like(
-                savedPost,
-                savedUser
-        );
-
         likeRepository.save(like);
-        likeRepository.save(like1);
         System.out.println("like 저장 완료!");
         assertThat(like.getId()).isNotNull();
 

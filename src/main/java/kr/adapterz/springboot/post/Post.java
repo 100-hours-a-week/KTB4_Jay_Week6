@@ -30,7 +30,7 @@ public class Post {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
     @Column(name = "view_count", nullable = false)
@@ -38,6 +38,9 @@ public class Post {
 
     @Column(name = "comment_count", nullable = false)
     private Long commentCount;
+
+    @Column(name = "like_count", nullable = false)
+    private Long likeCount;
 
     @Column(nullable = false)
     private boolean blinded;
@@ -57,6 +60,7 @@ public class Post {
         this.content = content;
         this.viewCount = 0L;
         this.commentCount = 0L;
+        this.likeCount = 0L;
         this.blinded = false;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = null;

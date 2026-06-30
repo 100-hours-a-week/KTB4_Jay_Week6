@@ -1,8 +1,13 @@
 package kr.adapterz.springboot.post;
 
+import jakarta.validation.Valid;
 import kr.adapterz.springboot.global.ApiResponse;
 import kr.adapterz.springboot.post.dto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +23,7 @@ public class PostController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<PostResponse>> post(
-            @RequestBody PostRequest request
+            @Valid @RequestBody PostRequest request
     ){
         PostResponse response = postService.post(request);
 
@@ -27,8 +32,11 @@ public class PostController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PostListResponse>>> postlist(){
-        List<PostListResponse> response = postService.getPost();
+    public ResponseEntity<ApiResponse<Page<PostListResponse>>> postlist(
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        Page<PostListResponse> response = postService.getPost(pageable);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new ApiResponse<>("post_list_success", response));
@@ -58,7 +66,7 @@ public class PostController {
     @PatchMapping("/{postId}")
     public ResponseEntity<ApiResponse<UpdatePostResponse>> updatePost(
             @PathVariable Long postId,
-            @RequestBody UpdatePostRequest request
+            @Valid @RequestBody UpdatePostRequest request
             ){
         UpdatePostResponse response = postService.updatePost(postId, request);
         return ResponseEntity.ok()

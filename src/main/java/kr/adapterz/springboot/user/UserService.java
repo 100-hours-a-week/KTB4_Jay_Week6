@@ -16,6 +16,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class UserService {
     private final UserRepository userRepository;
+    private final UserReader userReader;
 
     public List<GetUserResponse> getUsers() {
         return userRepository.findAll().stream()
@@ -30,15 +31,6 @@ public class UserService {
     }
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
-        if (request.getEmail() == null || request.getEmail().isBlank()){
-            throw new BadRequestException("empty_email");
-        }
-        if (request.getNickname() == null || request.getNickname().isBlank()){
-            throw new BadRequestException("empty_nickname");
-        }
-        if (request.getPassword() == null || request.getPassword().isBlank()){
-            throw new BadRequestException("empty_password");
-        }
         if (userRepository.existsByEmail(request.getEmail())){
             throw new ConflictException("already_exist_email");
         }
@@ -58,13 +50,6 @@ public class UserService {
     }
 
     public LoginResponse login(LoginRequest request){
-        if (request.getEmail() == null || request.getEmail().isBlank()){
-            throw new BadRequestException("empty_email");
-        }
-        if (request.getPassword() == null || request.getPassword().isBlank()){
-            throw new BadRequestException("empty_password");
-        }
-
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UnauthorizedException("login_failed"));
 
@@ -86,8 +71,7 @@ public class UserService {
         if (request.getProfileImage() == null || request.getProfileImage().isBlank()){
             throw new BadRequestException("empty_profileImage");
         }
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(UserNotFoundException::new);
+        User user = userReader.getUser(request.getUserId());
 
         if (!user.getNickname().equals(request.getNickname())
                 && userRepository.existsByNickname(request.getNickname())) {
@@ -104,25 +88,23 @@ public class UserService {
     @Transactional
     public void deleteUser(UserDeleteRequest request) {
 
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(UserNotFoundException::new);
+        User user = userReader.getUser(request.getUserId());
 
         user.delete();
     }
     @Transactional
     public void updatePass(UserUpdatePassRequest request){
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(UserNotFoundException::new);
+        User user = userReader.getUser(request.getUserId());
 
         if (user.isDeleted()){
             throw new BadRequestException("deleted_user");
         }
-        if (request.getNewpassword() == null || request.getNewpassword().isBlank()) {
+        if (request.getNewPassword() == null || request.getNewPassword().isBlank()) {
             throw new BadRequestException("empty_password");
         }
-        if (!request.getNewpassword().equals(request.getNewpasswordCheck())) {
+        if (!request.getNewPassword().equals(request.getNewPasswordCheck())) {
             throw new BadRequestException("password_check_not_match");
         }
-        user.changePassword(request.getNewpassword());
+        user.changePassword(request.getNewPassword());
     }
 }

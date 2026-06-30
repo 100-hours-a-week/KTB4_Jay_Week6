@@ -7,8 +7,9 @@ import kr.adapterz.springboot.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @SpringBootTest
 @Transactional
@@ -25,7 +26,7 @@ class JoinFetchTest {
 
     //일반 테스트
     @Test
-    void normal_query_causes_n_plus_one() {
+    void fetch_join_with_pageable_does_not_cause_n_plus_one() {
         // given
         for (int i = 1; i <= 5; i++) {
             User user = userRepository.save(new User(
@@ -45,11 +46,13 @@ class JoinFetchTest {
         em.flush();
         em.clear();
 
+        Pageable pageable = PageRequest.of(0, 10);
+
         // when
-        List<Post> posts = postRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc();
+        Page<Post> posts = postRepository.findAllWithAuthorFetchJoin(pageable);
 
         // then
-        for (Post post : posts) {
+        for (Post post : posts.getContent()) {
             System.out.println(post.getAuthor().getNickname());
         }
     }
@@ -75,11 +78,13 @@ class JoinFetchTest {
         em.flush();
         em.clear();
 
+        Pageable pageable = PageRequest.of(0, 10);
+
         // when
-        List<Post> posts = postRepository.findAllWithAuthorFetchJoin();
+        Page<Post> posts = postRepository.findAllWithAuthorFetchJoin(pageable);
 
         // then
-        for (Post post : posts) {
+        for (Post post : posts.getContent()) {
             System.out.println(post.getAuthor().getNickname());
         }
     }

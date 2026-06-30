@@ -10,6 +10,7 @@ import java.util.List;
 @Getter
 public class CommentDetailResponse {
     private Long commentId;
+    private Long authorId;
     private String content;
     private String authorNickname;
     private Boolean authorDeleted;

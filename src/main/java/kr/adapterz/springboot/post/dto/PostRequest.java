@@ -1,5 +1,6 @@
 package kr.adapterz.springboot.post.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -7,6 +8,10 @@ import lombok.NoArgsConstructor;
 @Getter
 public class PostRequest {
     private Long userId;
+
+    @NotBlank(message = "empty_title")
     private String title;
+
+    @NotBlank(message = "empty_content")
     private String content;
 }

@@ -13,12 +13,14 @@ import java.util.List;
 @Getter
 public class PostDetailResponse {
     private Long postId;
+    private Long userId;
     private String title;
     private String content;
     private String authorNickname;
     private String authorProfileImage;
     private Boolean authorDeleted;
     private Boolean blinded;
+    private Boolean liked;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Long likeCount;

@@ -15,6 +15,7 @@ public class PostListResponse {
     private String authorNickname;
     private Long commentCount;
     private Long viewCount;
+    private Long likeCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Boolean authorDeleted;

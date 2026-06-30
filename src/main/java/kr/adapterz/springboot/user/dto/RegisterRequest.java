@@ -2,14 +2,21 @@
 
 package kr.adapterz.springboot.user.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
 public class RegisterRequest {
+    @NotBlank(message = "empty_email")
     private String email;
+
+    @NotBlank(message = "empty_password")
     private String password;
+
+    @NotBlank(message = "empty_nickname")
     private String nickname;
+
     private String profileImage;
 }

@@ -30,6 +30,7 @@ dependencies {
 
 	// 진짜 무슨 SQL이 찍히는지 확인 가능
 	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.12.0'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
 	// @Getter @NoArgsConstructor 같은 거 쓸 때 필요
 	compileOnly 'org.projectlombok:lombok'
